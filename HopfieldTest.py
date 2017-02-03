@@ -2,19 +2,33 @@ import random
 from time import sleep
 from copy import deepcopy
 
+"""
+A simple, 100 node Hopfield net to store and retrieve
+representations of the numbers 0, 1 and 2.
+"""
+
+"""
+Edit this to set a specific starting state for the net.
+"""
+
 input_pattern = (
+    "----OO----"
+    "-----O----"
+    "-----O----"
+    "-----O----"
     "----------"
-    "----------"
-    "----------"
-    "O---------"
-    "O---------"
-    "O---------"
-    "O---------"
-    "----------"
-    "----------"
-    "----------"
+    "-----O----"
+    "-----O----"
+    "-----O----"
+    "-----O----"
+    "----OOO---"
     )
 
+"""
+Edit this to change the stored patterns. Note: thresholds
+for nodes are all zero, so the inverse of any pattern
+here will also be stored.
+"""
 patterns_to_store = [
     (
     "----OO----"
@@ -42,14 +56,14 @@ patterns_to_store = [
     ),
     (
     "---OOOO---"
-    "-OO----OO-"
-    "O--------O"
-    "---------O"
-    "-------OO-"
-    "---OOOO---"
+    "--O----O--"
+    "-O------O-"
+    "--------O-"
+    "-------O--"
+    "------O---"
+    "-----O----"
+    "---OO-----"
     "-OO-------"
-    "O---------"
-    "O---------"
     "OOOOOOOOOO"
     )
     ]
@@ -139,41 +153,52 @@ def update(nodes, weights):
         print_counter += 1
         if print_counter % 10 == 0: # Change frequncy of prints here
             print_state(nodes)
-            sleep(0.1)
-            
-
-    return nodes
+            sleep(0.1) # Just makes the output look nicer
 
 
-def get_random_input():
+
+def get_random_input(density=""):
 
     """
-    Returns a random starting state for the network.
+    Returns a random starting state for the network. Setting density
+    to "low" will give fewer active nodes, setting it to high will
+    give more active nodes.
     """
 
-    return [random.choice([-1, 1]) for n in range(100)]
+    if density == "low":
+        state = [random.choice([-1, -1, 1]) for n in range(100)]
+    elif density == "high":
+        state = [random.choice([-1, 1, 1]) for n in range(100)]
+    else:
+        state = [random.choice([-1, 1]) for n in range(100)]
+
+    return state
 
 
 def main():
 
+    # Turn string patterns into int arrays
     stored_patterns = []
     for pattern in patterns_to_store:
         stored_patterns.append(process_pattern(pattern))
 
     nodes = process_pattern(input_pattern)
-    nodes = get_random_input() # Un-comment to start with a random state
+    #nodes = get_random_input() # Un-comment to start with a random state
 
+    # Set the weights for all connections
     weights = get_initial_weights(stored_patterns, nodes)
 
     max_iterations = 100
     last_state = []
 
     current_iteration = 0
+
+    # Main loop. 
     while (current_iteration < max_iterations):
         print("Iteration: " + str(current_iteration) + "\n")
         print_state(nodes)
         last_state = deepcopy(nodes)
-        nodes = update(nodes, weights)
+        update(nodes, weights)
 
         if nodes == last_state:
             print("Stable state reached.")
