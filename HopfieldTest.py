@@ -182,8 +182,9 @@ def main():
     for pattern in patterns_to_store:
         stored_patterns.append(process_pattern(pattern))
 
-    nodes = process_pattern(input_pattern)
-    #nodes = get_random_input() # Un-comment to start with a random state
+    nodes = get_random_input() 
+    # Un-comment to start with a specific state:
+    # nodes = process_pattern(input_pattern)
 
     # Set the weights for all connections
     weights = get_initial_weights(stored_patterns, nodes)
