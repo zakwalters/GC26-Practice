@@ -8,20 +8,31 @@ representations of the numbers 0, 1 and 2.
 """
 
 """
-Edit this to set a specific starting state for the net.
+Input patterns and stored patterns must have these
+dimensions.
 """
+no_of_rows = 10
+no_of_columns = 10
+no_of_nodes = no_of_rows * no_of_columns
 
+# True = use input pattern, False = use random pattern
+use_input_pattern = True
+
+"""
+Edit this to set a specific starting state for the net. The
+corresponding line in the main loop must also be un-commented.
+"""
 input_pattern = (
     "----OO----"
+    "---OOO----"
     "-----O----"
     "-----O----"
     "-----O----"
-    "----------"
     "-----O----"
     "-----O----"
     "-----O----"
     "-----O----"
-    "----OOO---"
+    "---OOOOO--"
     )
 
 """
@@ -76,10 +87,15 @@ def process_pattern(pattern):
     converts it into a list of ints; -1 for a "-" (an "off"),
     and 1 for an "O" (an "on"). Returns this list of ints.
     """
+
+    if len(pattern) != no_of_nodes:
+        raise ValueError("Pattern must contain " + str(no_of_nodes) + " nodes.")
+
     encode = {"O":1, "-":-1}
     return [encode[c] for c in pattern]
 
-def print_state(state):
+
+def print_state(state, updating_node=None):
 
     """
     Takes the current state of the net, state, and prints it to
@@ -87,20 +103,27 @@ def print_state(state):
     iteration. Returns null.
     """
 
-    # decode[1] == "O"
-    # decode[-1] == "-"
-    # "X" is included to make errors clear
     decode = ["X", "O", "-"]
 
     out = ""
+    if updating_node != None:
+        for y in range(0, no_of_nodes, no_of_rows):
+            row = ""
+            for x in range(0, no_of_columns):
+                if x + y == updating_node:
+                    row += decode[0]
+                else:
+                    row += decode[state[y + x]]
+            out += row + "\n"
 
-    for y in range(0, 100, 10):
-        row = ""
-        for x in range(0, 10):
-            row += decode[state[y + x]]
-        out += row + "\n"
+    else:
+        for y in range(0, no_of_nodes, no_of_rows):
+            row = ""
+            for x in range(0, no_of_columns):
+                row += decode[state[y + x]]
+            out += row + "\n"
 
-    print(out + "\n" + "~"*10 + "\n")
+    print(out + "\n" + "~"*no_of_columns + "\n")
 
 
 def get_initial_weights(stored_patterns, nodes):
@@ -115,9 +138,9 @@ def get_initial_weights(stored_patterns, nodes):
 
     weights = []
 
-    for node_from in range(100):
+    for node_from in range(no_of_nodes):
         weights.append([])
-        for node_to in range(100):
+        for node_to in range(no_of_nodes):
             if node_to == node_from:
                 weights[node_from].append(0)
             else:
@@ -136,13 +159,13 @@ def update(nodes, weights):
     turn, in a random order. Returns the modified state.
     """
 
-    update_order = [n for n in range(100)]
+    update_order = [n for n in range(no_of_nodes)]
     random.shuffle(update_order)
     print_counter = 0
 
     for selected_node in update_order:
         total = 0
-        for i in range(100):
+        for i in range(no_of_nodes):
             total += nodes[i] * weights[selected_node][i]
 
         if total > 0:
@@ -151,8 +174,8 @@ def update(nodes, weights):
             nodes[selected_node] = -1
 
         print_counter += 1
-        if print_counter % 10 == 0: # Change frequncy of prints here
-            print_state(nodes)
+        if print_counter % 1 == 0: # Change frequncy of prints here
+            print_state(nodes, updating_node=selected_node)
             sleep(0.1) # Just makes the output look nicer
 
 
@@ -161,18 +184,34 @@ def get_random_input(density=""):
 
     """
     Returns a random starting state for the network. Setting density
-    to "low" will give fewer active nodes, setting it to high will
+    to "low" will give fewer active nodes, setting it to "high" will
     give more active nodes.
     """
 
     if density == "low":
-        state = [random.choice([-1, -1, 1]) for n in range(100)]
+        state = [random.choice([-1, -1, 1]) for n in range(no_of_nodes)]
     elif density == "high":
-        state = [random.choice([-1, 1, 1]) for n in range(100)]
+        state = [random.choice([-1, 1, 1]) for n in range(no_of_nodes)]
     else:
-        state = [random.choice([-1, 1]) for n in range(100)]
+        state = [random.choice([-1, 1]) for n in range(no_of_nodes)]
 
     return state
+
+
+def corrupt_pattern(pattern, level=0.05):
+
+    """
+    Corrupts an input pattern randomly to test whether it can be recovered.
+    Takes the pattern to be corrupted, pattern, and a level between
+    0 and 1 indicating the likelihood of each node being corrupted.
+    """
+
+    if level < 0 or level > 1:
+        raise ValueError("Level of corruption must be between 0 and 1")
+
+    for i in range(no_of_nodes):
+        if random.random() < level:
+            pattern[i] = random.choice([-1, 1])
 
 
 def main():
@@ -182,9 +221,16 @@ def main():
     for pattern in patterns_to_store:
         stored_patterns.append(process_pattern(pattern))
 
-    nodes = get_random_input() 
-    # Un-comment to start with a specific state:
-    # nodes = process_pattern(input_pattern)
+    if use_input_pattern:
+        nodes = process_pattern(input_pattern)
+        # Un-comment to add random noise to the input:
+        corrupt_pattern(nodes, level=0.3)
+    else:
+        nodes = get_random_input()
+
+    print("Starting state:\n")
+    print_state(nodes)
+    sleep(3)
 
     # Set the weights for all connections
     weights = get_initial_weights(stored_patterns, nodes)
@@ -192,23 +238,38 @@ def main():
     max_iterations = 100
     last_state = []
 
-    current_iteration = 0
+    current_iteration = 1
 
-    # Main loop. 
+    # Main loop.
     while (current_iteration < max_iterations):
-        print("Iteration: " + str(current_iteration) + "\n")
         print_state(nodes)
         last_state = deepcopy(nodes)
         update(nodes, weights)
 
         if nodes == last_state:
+            print_state(nodes)
             print("Stable state reached.")
             break
+
+        print("Iteration: " + str(current_iteration) + " complete.\n")
+        sleep(1)
 
         current_iteration += 1
 
     else:
+        print_state(nodes)
         print("Max iterations reached.")
+
+    for i in range(len(stored_patterns)):
+        inverse = [[0, -1, 1][x] for x in stored_patterns[i]]
+        if nodes == stored_patterns[i]:
+            print("Retrieved stored pattern " + str(i) + ".")
+            break
+        elif nodes == inverse:
+            print("Retrieved inverse of pattern " + str(i) + ".")
+            break
+    else:
+        print("Stable state was not in stored patterns.")
 
 if __name__ == "__main__":
     main()
