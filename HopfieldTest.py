@@ -179,6 +179,19 @@ def update(nodes, weights):
             sleep(0.1) # Just makes the output look nicer
 
 
+def get_total_energy(pattern, weights):
+
+    """
+    Takes a pattern, pattern, and the weights of the net, weights,
+    and returns the total Hopfield energy of the state.
+    """
+
+    total = 0
+    for node_i in pattern:
+        for node_j in pattern:
+            total += weights[node_i][node_j] * node_i * node_j
+    return total * (-0.5)
+
 
 def get_random_input(density=""):
 
@@ -270,6 +283,8 @@ def main():
             break
     else:
         print("Stable state was not in stored patterns.")
+
+    print("Total energy: " + str(get_total_energy(nodes, weights)))
 
 if __name__ == "__main__":
     main()
