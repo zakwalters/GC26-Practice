@@ -192,15 +192,6 @@ public class MLP3 {
         }
     }
 
-    public void train(int numEpochs) {
-        // p represents the current pattern no.
-        for (int p = 0; p < patterns.length; p++) {
-            // load the pattern
-            loadPattern(p);
-
-        }
-    }
-
     public void forwardPass() {
         for (int i = 1; i < 3; i++) {
             for (int j = 1; j < o[i].length; j++) {
